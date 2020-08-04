@@ -79,7 +79,7 @@
       "location": "[variables('location')]",
       "comments": "This is the virtual machine that you're building.",
       "dependsOn": [
-        "[variables('NIC')]",
+        "[variables('NIC')]"
         ],
       "properties": {
         "osProfile": {
