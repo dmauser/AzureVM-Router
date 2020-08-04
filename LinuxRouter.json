@@ -47,7 +47,7 @@
       "description": "Existing Virtual Nework Name"
       }
     },
-    "existingvSubnet": {
+    "existingSubnet": {
       "type": "string",
       "metadata": {
       "description": "Type Existing Subnet Name"
@@ -68,7 +68,7 @@
     "extensionName":"CustomScript",
     "NIC": "[concat(parameters('virtualMachineName'),'NIC')]",
     "publicIPAddressName": "[concat(parameters('virtualMachineName'),'-PublicIP')]",
-    "subnet1Ref": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('existingVirtualNetworkName'), parameters('existingvSubnet'))]",
+    "subnet1Ref": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('existingVirtualNetworkName'), parameters('existingSubnet'))]",
     "location": "[resourceGroup().location]"
   },
   "resources": [
