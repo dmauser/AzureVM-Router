@@ -1,0 +1,1 @@
+Set-NetIPInterface -Forwarding Enabled
