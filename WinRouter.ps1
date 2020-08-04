@@ -1,4 +1,4 @@
-#Enable IP Forwarding in all interfaces
+#Enable IP Forwarding (IPv4 and IPv6) in all interfaces
 Set-NetIPInterface -Forwarding Enabled
 
 #Enable ICMPv4 and ICMPv6 to Router for monitoring (Windows Firewall is enable by default and blocks ICMP Echo Requests)
