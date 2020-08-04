@@ -21,4 +21,4 @@ Deploy a Windows (Server 2019 Core - Small Disk) Router to an existing Virtual N
 
 - Add VMSS option for both Linux and Windows deployments
 - Add Accelerated Networking option
-- Make Public IP option to add or remove (Currently deploys with Public IP assigned)
+- Make Public IP optional, enable or disable it (Currently deploys with Public IP assigned)
