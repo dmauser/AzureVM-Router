@@ -1,6 +1,6 @@
 # Deploy Azure VM as Router
 
-Deploy Azure VM (Linux or Windows) with IP forwarder enabled to be used as Router
+Deploy Azure VM (Linux or Windows) with IP forwarder enabled to be used as Router. All deployments in this document assumes you have already and existing Virtual Network (VNET) and Subnet.
 
 ## Deploy a single Linux VM as Router (IPv4)
 
@@ -19,5 +19,6 @@ Deploy a Windows (Server 2019 Core - Small Disk) Router to an existing Virtual N
 
 ## Roadmap
 
-- Add VMSS option for both Linux and Windows deployment types
-- Add Accellerated Networking option
+- Add VMSS option for both Linux and Windows deployments
+- Add Accelerated Networking option
+- Make Public IP option to add or remove (Currently deploys with Public IP assigned)
