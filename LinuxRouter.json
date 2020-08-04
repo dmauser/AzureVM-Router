@@ -1,0 +1,288 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vnetName": {
+            "defaultValue": "myVnet",
+            "type": "string"
+        },
+        "vnetPrefix": {
+            "defaultValue": "192.168.100.0/24",
+            "type": "string"
+        },
+        "subnetName": {
+            "defaultValue": "subnet1",
+            "type": "string"
+        },
+        "subnetPrefix": {
+            "defaultValue": "192.168.100.0/26",
+            "type": "string"
+        },
+        "vmType": {
+            "defaultValue": "ubuntu",
+            "type": "string",
+            "allowedValues": ["ubuntu"]
+        },
+        "vmName": {
+            "defaultValue": "myNva",
+            "type": "string"
+        },
+        "vmUsr": {
+            "defaultValue": "lab-user",
+            "type": "string"
+        },
+        "vmPwd": {
+            "defaultValue": null,
+            "type": "securestring"
+        },
+        "vmSize": {
+            "defaultValue": "Standard_B1s",
+            "type": "string"
+        },
+        "scriptUri": {
+            "defaultValue": "[uri(deployment().properties.templateLink.uri, 'linuxNVAconfig.sh')]",
+            "type": "string",
+            "metadata": { "description": "Script that will be executed" }            
+        },
+        "scriptCmd": {
+            "defaultValue": "sh linuxNVAconfig.sh",
+            "type": "string",
+            "metadata": { "description": "Command to run the script" }            
+        }
+    },
+    "variables": {
+		"computeApiVersion": "2017-03-30",
+        "networkApiVersion": "2017-06-01",
+        "apiVersion": "2015-06-15",
+        "settingsTable": {
+            "ubuntu": {
+                "publisher": "Canonical",
+                "offer": "UbuntuServer",
+                "sku": "18.04-LTS"
+            }
+        },
+        "settings": "[variables('settingsTable')[parameters('vmType')]]",
+        "avSetName": "[concat(parameters('vmName'),'-avset')]",
+        "pipName": "[concat(parameters('vmName'),'-pip')]",
+        "nicName": "[concat(parameters('vmName'),'-nic')]",
+        "ipConfigName": "[concat(variables('nicName'),'-ipConfig')]",
+		"diskName": "[concat(parameters('vmName'),'-osDisk')]",
+		"diskType": "Standard_LRS",
+		"osDiskSize": 32
+    },
+    "resources": [
+        {
+            "comments": "Create Vnet with one subnet",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('vnetName')]",
+            "apiVersion": "[variables('networkApiVersion')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('vnetPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('subnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('subnetPrefix')]"
+                        }
+                    }
+                ]
+            },
+            "resources": [],
+            "dependsOn": []
+        },
+		{
+			"comments": "Availability set for eventual NVA HA",
+			"type": "Microsoft.Compute/availabilitySets",
+			"name": "[variables('avSetName')]",
+            "apiVersion": "[variables('computeApiVersion')]",
+			"location": "[resourceGroup().location]",
+			"properties": {
+				"platformUpdateDomainCount": 2,
+				"platformFaultDomainCount": 2
+			},
+			"sku": {
+				"name": "Aligned"
+			}
+		},
+        {
+            "comments": "Deploy Linux VM as Virtual Network Appliance",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[parameters('vmName')]",
+            "apiVersion": "[variables('computeApiVersion')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+				"availabilitySet": {
+					"id": "[resourceId('Microsoft.Compute/availabilitySets', variables('avSetName'))]"
+				},
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmSize')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('settingsTable').ubuntu.publisher]",
+                        "offer": "[variables('settingsTable').ubuntu.offer]",
+                        "sku": "[variables('settingsTable').ubuntu.sku]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Linux",
+                        "caching": "ReadWrite",
+                        "name": "[variables('diskName')]",
+                        "diskSizeGb": "[variables('osDiskSize')]",
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "[variables('diskType')]"
+                        }
+                        },
+                    "dataDisks": []
+                },
+                "osProfile": {
+                    "computerName": "[parameters('vmName')]",
+                    "adminUsername": "[parameters('vmUsr')]",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": false
+                    },
+                    "secrets": [],
+                    "adminPassword": "[parameters('vmPwd')]"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]",
+                            "properties": {
+                                "primary": true
+                            }
+                        }
+                    ]
+                }
+            },
+            "resources": [],
+            "dependsOn": [
+                "[variables('nicName')]"
+            ]
+        },
+        {
+            "comments": "Public IP address",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[variables('pipName')]",
+            "apiVersion": "[variables('networkApiVersion')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "idleTimeoutInMinutes": 4
+            },
+            "resources": [],
+            "dependsOn": []
+        },
+        {
+			"comments": "NIC created with dynamic IP addresses",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[variables('nicName')]",
+            "apiVersion": "[variables('networkApiVersion')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "[variables('ipConfigName')]",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+                            },
+                            "subnet": {
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), '/subnets/', parameters('subnetName'))]"
+                            }
+                        }
+                    }
+                ],
+                "dnsSettings": {
+                    "dnsServers": []
+                },
+                "enableIPForwarding": true
+            },
+            "resources": [],
+            "dependsOn": [
+                "[variables('pipName')]",
+                "[parameters('vnetName')]"
+            ]
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(parameters('vmName'), '/installcustomscript')]",
+            "apiVersion": "[variables('computeApiVersion')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "publisher": "Microsoft.Azure.Extensions",
+                "type": "CustomScript",
+                "typeHandlerVersion": "2.0",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "fileUris": [
+                        "[parameters('scriptUri')]"
+                    ],
+                    "commandToExecute": "[parameters('scriptCmd')]"
+                }
+            },
+            "dependsOn": [
+                "[parameters('vmName')]"
+            ]
+        },
+        {
+            "comments": "Nested template to wait for VM creation before fetching the allocated public IP",
+            "name": "fetchIpAddress",
+            "apiVersion": "2017-05-10",
+            "type": "Microsoft.Resources/deployments",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "contentVersion": "1.0.0.0",
+                    "uri": "[uri(deployment().properties.templateLink.uri, 'fetchIpAddress.json')]"
+                },
+                "parameters": {
+                    "publicIPAddressId": {
+                        "value": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[parameters('vmName')]"
+            ]
+        },
+        {
+            "comments": "Nested template to wait for VM creation before fetching the allocated private IP of the NIC",
+            "name": "fetchNicIpAddress",
+            "apiVersion": "2017-05-10",
+            "type": "Microsoft.Resources/deployments",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "contentVersion": "1.0.0.0",
+                    "uri": "[uri(deployment().properties.templateLink.uri, 'fetchNicIpAddress.json')]"
+                },
+                "parameters": {
+                    "nicId": {
+                        "value": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[parameters('vmName')]"
+            ]
+        }
+    ],
+    "outputs": {
+        "public_ip_address": {
+            "type": "string",
+            "value": "[reference('fetchIpAddress').outputs.ipAddress.value]"
+        },
+        "private_ip_address": {
+            "type": "string",
+            "value": "[reference('fetchNicIpAddress').outputs.ipAddress.value]"
+        }        
+    }
+}
