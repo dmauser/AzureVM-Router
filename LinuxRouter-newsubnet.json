@@ -19,9 +19,9 @@
       "type": "string",
       "defaultValue": "Standard_LRS",
       "allowedValues": [
-      "Standard_LRS", 
-      "StandardSSD_LRS",
-      "Premium_LRS" 
+        "Standard_LRS",
+        "StandardSSD_LRS",
+        "Premium_LRS"
       ],
       "metadata": {
         "description": "Select Disk Type: Premium SSD (Premium_LRS), Standard SSD (StandardSSD_LRS), Standard HDD (Standard_LRS)"
@@ -42,34 +42,80 @@
     "existingVirtualNetworkName": {
       "type": "string",
       "metadata": {
-      "description": "Existing Virtual Nework Name"
+        "description": "Existing Virtual Nework Name"
       }
     },
-    "existingSubnet": {
+    "subnetName": {
+      "type": "string",
+      "defaultValue": "lxnva-subnet",
+      "metadata": {
+        "description": "Name of the Subnet where NVA will reside"
+      }
+    },
+    "subnetPrefix": {
       "type": "string",
       "metadata": {
-      "description": "Type Existing Subnet Name"
-       }
+        "description": "Specify Subnet Prefix. It can be small as /29"
+      }
+  
     },
     "scriptUri": {
-      "defaultValue": "[uri(deployment().properties.templateLink.uri, 'linuxrouter.sh')]",
+      "defaultValue": "[uri(deployment().properties.templateLink.uri, 'LinuxRouter.sh')]",
       "type": "string",
-      "metadata": { "description": "Script that will be executed" }            
+      "metadata": { "description": "Script that will be executed" }
     },
     "scriptCmd": {
-       "defaultValue": "sh linuxrouter.sh",
-       "type": "string",
-       "metadata": { "description": "Command to run the script" }            
+      "defaultValue": "sh linuxrouter.sh",
+      "type": "string",
+      "metadata": { "description": "Command to run the script" }
     }
   },
   "variables": {
-    "extensionName":"CustomScript",
+    "extensionName": "CustomScript",
     "NIC": "[concat(parameters('virtualMachineName'),'-NIC')]",
     "publicIPAddressName": "[concat(parameters('virtualMachineName'),'-PublicIP')]",
-    "subnet1Ref": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('existingVirtualNetworkName'), parameters('existingSubnet'))]",
+    "subnet1Ref": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('existingVirtualNetworkName'), parameters('subnetName'))]",
     "location": "[resourceGroup().location]"
   },
   "resources": [
+    {
+      "apiVersion": "2020-05-01",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "default-nsg",
+      "location": "[variables('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-Traffic-RFC-1918",
+            "properties": {
+              "priority": 300,
+              "protocol": "TCP",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "*"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2020-05-01",
+      "type": "Microsoft.Network/virtualNetworks/Subnets",
+      "name": "[concat(parameters('subnetName'),'-vnet')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[variables('NIC')]"
+      ],
+      "properties": {
+        "addressPrefix": "[parameters('subnetPrefix')]",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'default-nsg')]"
+        }
+      }
+    },
     {
       "name": "[parameters('virtualMachineName')]",
       "type": "Microsoft.Compute/virtualMachines",
@@ -78,7 +124,7 @@
       "comments": "This is the virtual machine that you're building.",
       "dependsOn": [
         "[variables('NIC')]"
-        ],
+      ],
       "properties": {
         "osProfile": {
           "computerName": "[parameters('virtualMachineName')]",
@@ -170,7 +216,7 @@
             "[parameters('scriptUri')]"
           ],
           "commandToExecute": "[parameters('scriptCmd')]"
-        }        
+        }
       }
     }
   ],
