@@ -1,6 +1,7 @@
 # These actions will be run at provisioning time
 # Enable IP forwarding
 sysctl -w net.ipv4.ip_forward=1
+sysctl -w net.ipv6.conf.all.forwarding=1
 sed -i "/net.ipv4.ip_forward=1/ s/# *//" /etc/sysctl.conf
 
 # Enable NAT to Internet
