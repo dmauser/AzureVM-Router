@@ -2,7 +2,7 @@
 
 Deploy Azure VM (Linux or Windows) with IP forwarder enabled to be used as Router. All deployments in this document assumes you have already and existing Virtual Network (VNET) and Subnet.
 
-## Deploy Linux VM as Router (IPv4)
+## Deploy Linux VM as Router (IPv4 and IPv6) + NAT to Internet
 
 This template deploys a Linux Router (Ubuntu 18.04-LTS) to an existing Virtual Network (VNET)/Subnet using a Single NIC + IP Forwarding Enabled.
 

@@ -19,9 +19,9 @@
       "type": "string",
       "defaultValue": "Standard_LRS",
       "allowedValues": [
-      "Standard_LRS", 
-      "StandardSSD_LRS",
-      "Premium_LRS" 
+        "Standard_LRS",
+        "StandardSSD_LRS",
+        "Premium_LRS"
       ],
       "metadata": {
         "description": "Select Disk Type: Premium SSD (Premium_LRS), Standard SSD (StandardSSD_LRS), Standard HDD (Standard_LRS)"
@@ -42,43 +42,46 @@
     "existingVirtualNetworkName": {
       "type": "string",
       "metadata": {
-      "description": "Existing Virtual Nework Name"
+        "description": "Existing Virtual Nework Name"
       }
     },
     "existingSubnet": {
       "type": "string",
       "metadata": {
-      "description": "Type Existing Subnet Name"
-       }
+        "description": "Type Existing Subnet Name"
+      }
     },
     "scriptUri": {
       "defaultValue": "[uri(deployment().properties.templateLink.uri, 'linuxrouter.sh')]",
       "type": "string",
-      "metadata": { "description": "Script that will be executed" }            
+      "metadata": { "description": "Script that will be executed" }
     },
     "scriptCmd": {
-       "defaultValue": "sh linuxrouter.sh",
-       "type": "string",
-       "metadata": { "description": "Command to run the script" }            
+      "defaultValue": "sh linuxrouter.sh",
+      "type": "string",
+      "metadata": { "description": "Command to run the script" }
+    },
+    "location": {
+      "defaultValue": "[resourceGroup().location]",
+      "type": "string"
     }
   },
   "variables": {
-    "extensionName":"CustomScript",
+    "extensionName": "CustomScript",
     "NIC": "[concat(parameters('virtualMachineName'),'-NIC')]",
     "publicIPAddressName": "[concat(parameters('virtualMachineName'),'-PublicIP')]",
-    "subnet1Ref": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('existingVirtualNetworkName'), parameters('existingSubnet'))]",
-    "location": "[resourceGroup().location]"
+    "subnet1Ref": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('existingVirtualNetworkName'), parameters('existingSubnet'))]"
   },
   "resources": [
     {
       "name": "[parameters('virtualMachineName')]",
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2017-03-30",
-      "location": "[variables('location')]",
+      "location": "[parameters('location')]",
       "comments": "This is the virtual machine that you're building.",
       "dependsOn": [
         "[variables('NIC')]"
-        ],
+      ],
       "properties": {
         "osProfile": {
           "computerName": "[parameters('virtualMachineName')]",
@@ -119,7 +122,7 @@
       "name": "[variables('NIC')]",
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2017-06-01",
-      "location": "[variables('location')]",
+      "location": "[parameters('location')]",
       "comments": "This will be your Primary NIC Untrusted",
       "dependsOn": [
         "[variables('publicIpAddressName')]"
@@ -146,7 +149,7 @@
       "name": "[variables('publicIpAddressName')]",
       "type": "Microsoft.Network/publicIPAddresses",
       "apiVersion": "2017-06-01",
-      "location": "[variables('location')]",
+      "location": "[parameters('location')]",
       "comments": "Public IP for your Primary NIC",
       "properties": {
         "publicIPAllocationMethod": "Dynamic"
@@ -156,7 +159,7 @@
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "name": "[concat(parameters('virtualMachineName'), '/', variables('extensionName'))]",
       "apiVersion": "2015-06-15",
-      "location": "[variables('location')]",
+      "location": "[parameters('location')]",
       "dependsOn": [
         "[concat('Microsoft.Compute/virtualMachines/', parameters('virtualMachineName'))]"
       ],
@@ -170,7 +173,7 @@
             "[parameters('scriptUri')]"
           ],
           "commandToExecute": "[parameters('scriptCmd')]"
-        }        
+        }
       }
     }
   ],
