@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # These actions will be run at provisioning time
 # Enable IP forwarding
 sysctl -w net.ipv4.ip_forward=1
