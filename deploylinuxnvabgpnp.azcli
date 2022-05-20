@@ -14,7 +14,7 @@ az group create --name $rg --location $location
 az network vnet create --resource-group $rg --name $vnetname --location $location --address-prefixes 10.1.0.0/16 --subnet-name $subnetname --subnet-prefix 10.1.10.0/24 -o none
 
 # NVA + Config script to enable NAT
-az network public-ip create --name $nvaname-pip --resource-group $rg --location $location --allocation-method Dynamic
+az network public-ip create --name $nvaname-pip --resource-group $rg --location $location --allocation-method Dynamic --output none
 az network nic create --name $nvaname-nic --resource-group $rg --subnet $subnetname --vnet $vnetname --public-ip-address $nvaname-pip --ip-forwarding true -o none
 az vm create --resource-group $rg --location $location --name $nvaname --size Standard_B1s --nics $nvaname-nic  --image UbuntuLTS --admin-username $username --admin-password $password -o none
 
@@ -45,7 +45,10 @@ az vm extension set --resource-group $rg --vm-name $nvaname  --name customScript
 az network routeserver peering create --resource-group $rg --routeserver $vnetname-rs --name $nvaname --peer-asn $asn_quagga \
 --peer-ip $(az network nic show --name $nvaname-nic --resource-group $rg --query ipConfigurations[0].privateIpAddress -o tsv) 
 
-
+#Validation
+# Check effective routes NVA
+az network nic show --resource-group $rg -n $nvaname-nic --query "ipConfigurations[].privateIpAddress" -o tsv
+az network nic show-effective-route-table --resource-group $rg -n $nvaname-nic -o table
 
 #Clean up
 az group delete -g $rg --no-wait --yes
