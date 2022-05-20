@@ -13,17 +13,18 @@ az group create --name $rg --location $location
 ## Create VNET and NVA
 az network vnet create --resource-group $rg --name $vnetname --location $location --address-prefixes 10.1.0.0/16 --subnet-name $subnetname --subnet-prefix 10.1.10.0/24 -o none
 
-# NVA + Config script to enable NAT
+# Enable routing, NAT and BGP on Linux NVA:
 az network public-ip create --name $nvaname-pip --resource-group $rg --location $location --allocation-method Dynamic --output none
 az network nic create --name $nvaname-nic --resource-group $rg --subnet $subnetname --vnet $vnetname --public-ip-address $nvaname-pip --ip-forwarding true -o none
 az vm create --resource-group $rg --location $location --name $nvaname --size Standard_B1s --nics $nvaname-nic  --image UbuntuLTS --admin-username $username --admin-password $password -o none
 
 #Provisioning Route Server
 az network vnet subnet create --address-prefix 10.1.20.0/24 --name RouteServerSubnet --resource-group $rg --vnet-name $vnetname --output none
-az network public-ip create --resource-group $rg --name $vnetname-rs-pip --allocation-method Static --sku Standard
+az network public-ip create --resource-group $rg --name $vnetname-rs-pip --allocation-method Static --sku Standard -o none
 az network routeserver create --resource-group $rg --name $vnetname-rs \
 --hosted-subnet $(az network vnet subnet show --resource-group $rg --vnet-name $vnetname --name RouteServerSubnet --query id --out tsv) \
---public-ip-address $vnetname-rs-pip
+--public-ip-address $vnetname-rs-pip \
+-o none
 
 #NVA BGP settings
 asn_quagga=65020 # Set ASN
