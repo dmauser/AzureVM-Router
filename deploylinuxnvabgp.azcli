@@ -1,0 +1,52 @@
+#*** Example 1: New Resource Group + New VNET/Subnet***
+
+##parameters#
+rg="nva-lab" #set your resource group
+location=centralus #set your Azure region
+username=azureuser
+password=Msft123Msft123
+vnetname=vnet1
+subnetname=nvasubnet
+nvaname=linux-nva
+
+#Resource Group
+az group create --name $rg --location $location
+
+## Create VNET and NVA
+az network vnet create --resource-group $rg --name $vnetname --location $location --address-prefixes 10.1.0.0/16 --subnet-name $subnetname --subnet-prefix 10.1.10.0/24 -o none
+
+# NVA + Config script to enable NAT
+az network public-ip create --name $nvaname-pip --resource-group $rg --location $location --allocation-method Dynamic
+az network nic create --name $nvaname-nic --resource-group $rg --subnet $subnetname --vnet $vnetname --public-ip-address $nvaname-pip --ip-forwarding true -o none
+az vm create --resource-group $rg --location $location --name $nvaname --size Standard_B1s --nics $nvaname-nic  --image UbuntuLTS --admin-username $username --admin-password $password -o none
+
+#Provisioning Route Server
+az network vnet subnet create --address-prefix 10.1.20.0/24 --name RouteServerSubnet --resource-group $rg --vnet-name $vnetname --output none
+az network public-ip create --resource-group $rg --name $vnetname-rs-pip --allocation-method Static --sku Standard
+az network routeserver create --resource-group $rg --name $vnetname-rs \
+--hosted-subnet $(az network vnet subnet show --resource-group $rg --vnet-name $vnetname --name RouteServerSubnet --query id --out tsv) \
+--public-ip-address $vnetname-rs-pip
+
+#NVA BGP settings
+asn_quagga=65020 # Set ASN
+bgp_network1=10.100.0.0/16 # Set Network to be propagated
+
+
+#NVA BGP config variables (do not change)
+bgp_routerId=$(az network nic show --name $nvaname-nic --resource-group $rg --query ipConfigurations[0].privateIpAddress -o tsv)
+routeserver_IP1=$(az network routeserver list --resource-group $rg --query '{IPs:[0].virtualRouterIps[0]}' -o tsv)
+routeserver_IP2=$(az network routeserver list --resource-group $rg --query '{IPs:[0].virtualRouterIps[1]}' -o tsv)
+
+
+# Build Route Server BGP Peering
+az network routeserver peering create --resource-group $rg --routeserver $vnetname-rs --name $nvaname --peer-asn $asn_quagga \
+--peer-ip $(az network nic show --name $nvaname-nic --resource-group $rg --query ipConfigurations[0].privateIpAddress -o tsv) 
+
+# Enable routing and NAT on Linux NVA:
+scripturi="https://raw.githubusercontent.com/dmauser/AzureVM-Router/master/linuxrouterbgp.sh"
+az vm extension set --resource-group $rg --vm-name $nvaname  --name customScript --publisher Microsoft.Azure.Extensions \
+--protected-settings "{\"fileUris\": [\"$scripturi\"],\"commandToExecute\": \"./linuxrouterbgp.sh $asn_quagga $bgp_routerId $bgp_network1 $routeserver_IP1 $routeserver_IP2\"}" \
+--no-wait
+
+#Clean up
+az group delete -g $rg --no-wait --yes
