@@ -1,5 +1,3 @@
-#*** Example 1: New Resource Group + New VNET/Subnet***
-
 ##parameters#
 rg="nva-lab" #set your resource group
 location=centralus #set your Azure region

@@ -1,5 +1,5 @@
 ##parameters#
-rg="nva-lab-bgp" #set your resource group
+rg="nva-lab-nhip" #set your resource group
 location=centralus #set your Azure region
 username=azureuser
 password=Msft123Msft123
@@ -28,6 +28,7 @@ az network routeserver create --resource-group $rg --name $vnetname-rs \
 #NVA BGP settings
 asn_quagga=65020 # Set ASN
 bgp_network1=10.100.0.0/16 # Set Network to be propagated
+nexthopip=10.1.10.100 #Set Next-Hop IP
 
 #NVA BGP config variables (do not change)
 bgp_routerId=$(az network nic show --name $nvaname-nic --resource-group $rg --query ipConfigurations[0].privateIpAddress -o tsv)
@@ -43,6 +44,8 @@ az vm extension set --resource-group $rg --vm-name $nvaname  --name customScript
 # Build Route Server BGP Peering
 az network routeserver peering create --resource-group $rg --routeserver $vnetname-rs --name $nvaname --peer-asn $asn_quagga \
 --peer-ip $(az network nic show --name $nvaname-nic --resource-group $rg --query ipConfigurations[0].privateIpAddress -o tsv) 
+
+
 
 #Clean up
 az group delete -g $rg --no-wait --yes
