@@ -94,7 +94,7 @@ router bgp $asn_quagga
  neighbor $routeserver_IP1 route-map nexthop out
  neighbor $routeserver_IP2 remote-as 65515
  neighbor $routeserver_IP2 soft-reconfiguration inbound
- neighbor $routeserver_IP1 route-map nexthop out
+ neighbor $routeserver_IP2 route-map nexthop out
 !
  address-family ipv6
  exit-address-family

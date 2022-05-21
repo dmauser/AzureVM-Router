@@ -36,9 +36,9 @@ routeserver_IP1=$(az network routeserver list --resource-group $rg --query '{IPs
 routeserver_IP2=$(az network routeserver list --resource-group $rg --query '{IPs:[0].virtualRouterIps[1]}' -o tsv)
 
 # Enable routing, NAT and BGP on Linux NVA:
-scripturi="https://raw.githubusercontent.com/dmauser/AzureVM-Router/master/linuxrouterbgp.sh"
+scripturi="https://raw.githubusercontent.com/dmauser/AzureVM-Router/master/linuxrouterbgpnh.sh"
 az vm extension set --resource-group $rg --vm-name $nvaname  --name customScript --publisher Microsoft.Azure.Extensions \
---protected-settings "{\"fileUris\": [\"$scripturi\"],\"commandToExecute\": \"./linuxrouterbgpnp.sh $asn_quagga $bgp_routerId $bgp_network1 $routeserver_IP1 $routeserver_IP2 $nexthopip\"}" \
+--protected-settings "{\"fileUris\": [\"$scripturi\"],\"commandToExecute\": \"./linuxrouterbgpnh.sh $asn_quagga $bgp_routerId $bgp_network1 $routeserver_IP1 $routeserver_IP2 $nexthopip\"}" \
 --no-wait
 
 # Build Route Server BGP Peering
