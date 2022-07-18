@@ -5,8 +5,8 @@
 !
 router bgp 65020
  bgp router-id 172.16.1.5
- network 10.50.0.8/29
  network 10.50.0.0/29
+ network 10.50.0.8/29
  network 10.50.0.16/29
  network 10.50.0.24/29
  network 10.50.0.32/29
