@@ -2,6 +2,7 @@
 ! Zebra configuration saved from vty
 !   2022/07/18 22:08:28
 !
+log file /var/log/quagga/bgpd.log informational
 !
 router bgp 65020
  bgp router-id 172.16.1.5
