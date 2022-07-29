@@ -104,9 +104,9 @@ done
 #Enable boot diagnostics for all VMs in the resource group (Serial console)
 let "randomIdentifier=$RANDOM" #used to create unique storage account name.
 #Create Storage Account (boot diagnostics + serial console)
-az storage account create -n serialconsole$randomIdentifier -g $rg -l $location --sku Standard_LRS -o none
+az storage account create -n sc$randomIdentifier -g $rg -l $location --sku Standard_LRS -o none
 #Enable boot diagnostics
-stguri=$(az storage account show -n serialconsole$randomIdentifier -g $rg --query primaryEndpoints.blob -o tsv)
+stguri=$(az storage account show -n sc$randomIdentifier -g $rg --query primaryEndpoints.blob -o tsv)
 az vm boot-diagnostics enable --storage $stguri --ids $(az vm list -g $rg --query "[].id" -o tsv) -o none
 
 echo Installing tools for networking connectivity validation such as traceroute, tcptraceroute, iperf and others  
