@@ -135,6 +135,8 @@ do
  az network nic show --resource-group $rg -n "$nvaname"VMNic --query "ipConfigurations[].privateIpAddress" -o tsv
  az network nic show-effective-route-table --resource-group $rg -n "$nvaname"VMNic -o table
 done
+
+
 #Clean up
 az group delete -g $rg --no-wait --yes
 
