@@ -1,11 +1,12 @@
 ##parameters#
 rg="nva-lab-nhip" #set your resource group
-location=eastus #set your Azure region
+location=centralus #set your Azure region
 username=azureuser
 password=Msft123Msft123
 vnetname=vnet1
 nvasubnetname=nvasubnet
 nvaname=linux-nva
+instances=2 #NVA instances
 vmsize=Standard_DS1_v2
 mypip=$(curl -s -4 ifconfig.io)
 #Specific NVA BGP settings
@@ -35,7 +36,7 @@ az network route-table route create --resource-group $rg --name default-to-Inter
  --address-prefix 0.0.0.0/0 \
  --next-hop-type Internet \
  --output none
-az network vnet subnet update -n $nvasubnetname -g $rg --vnet-name $vnetname --route-table $vnetname-rt-nva 
+az network vnet subnet update -n $nvasubnetname -g $rg --vnet-name $vnetname --route-table $vnetname-rt-nva -o none
 
 #Provisioning Route Server
 echo Provisioning Route Server
@@ -63,7 +64,7 @@ done
 
 echo Provisioning NVAs
 nexthopip=$(az network lb show -g $rg --name $vnetname-linux-nvalb --query "frontendIpConfigurations[0].privateIpAddress" -o tsv) #Set Next-Hop IP
-nvanames=$(i=1;while [ $i -le $instances ];do echo $vnetname-$nvaintname$i; ((i++));done)
+nvanames=$(i=1;while [ $i -le $instances ];do echo $vnetname-$nvaname$i; ((i++));done)
 for nvaname in $nvanames
 do
  # Enable routing, NAT and BGP on Linux NVA:
@@ -77,7 +78,7 @@ do
  # Enable routing and NAT on Linux NVA:
  # Enable routing, NAT and BGP on Linux NVA:
  scripturi="https://raw.githubusercontent.com/dmauser/AzureVM-Router/master/linuxrouterbgpnh.sh"
- az vm extension set --resource-group $rg --vm-name $nvaname  --name customScript --publisher Microsoft.Azure.Extensions \
+ az vm extension set --resource-group $rg --vm-name $nvaname --name customScript --publisher Microsoft.Azure.Extensions \
  --protected-settings "{\"fileUris\": [\"$scripturi\"],\"commandToExecute\": \"./linuxrouterbgpnh.sh $asn_quagga $bgp_routerId $bgp_network1 $routeserver_IP1 $routeserver_IP2 $nexthopip\"}" \
  --no-wait 
 
