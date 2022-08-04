@@ -53,8 +53,10 @@ router bgp $asn_frr
  network $bgp_network2
  network $bgp_network3
  neighbor $routeserver_IP1 remote-as 65515
+ neighbor $routeserver_IP1 ebgp-multihop 255
  neighbor $routeserver_IP1 soft-reconfiguration inbound
  neighbor $routeserver_IP2 remote-as 65515
+ neighbor $routeserver_IP2 ebgp-multihop 255
  neighbor $routeserver_IP2 soft-reconfiguration inbound
 !
  address-family ipv6
