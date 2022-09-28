@@ -4,8 +4,8 @@
 !
 log file /var/log/quagga/bgpd.log informational
 !
-router bgp 65020
- bgp router-id 172.16.1.5
+router bgp 65002
+ bgp router-id 10.2.0.36
  network 10.50.0.0/29
  network 10.50.0.8/29
  network 10.50.0.16/29
