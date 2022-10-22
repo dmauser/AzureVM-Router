@@ -85,6 +85,8 @@ EOF
 echo "add quagga config"
 cat <<EOF > /etc/quagga/bgpd.conf
 !
+log file /var/log/quagga/bgpd.log informational
+!
 router bgp $asn_quagga
  bgp router-id $bgp_routerId
  network $bgp_network1
