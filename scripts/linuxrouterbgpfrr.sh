@@ -49,6 +49,7 @@ cat <<EOF > /etc/frr/frr.conf
 router bgp $asn_frr
  bgp router-id $bgp_routerId
  no bgp ebgp-requires-policy
+ no bgp network import-check
  network $bgp_network1
  network $bgp_network2
  network $bgp_network3
